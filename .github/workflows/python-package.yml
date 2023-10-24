@@ -1,0 +1,43 @@
+---
+Ce workflow est conçu pour automatiser le processus d'installation des dépendances Python, d'exécution des tests et de linting pour une variété de versions Python. 
+
+## Utilisation de bibliothèques spécifiques
+
+Le workflow est adapté pour des projets qui utilisent les bibliothèques `pandas`, `re` et `tqdm` pour la manipulation de données et le traitement.
+
+## Déclencheurs du workflow (`on`)
+
+Le workflow est déclenché dans deux scénarios :
+
+1. Lors d'un `push` sur la branche `main`.
+2. Lors d'une `pull_request` ciblant la branche `main`.
+
+## Jobs
+
+Il y a un job principal, `build`, dans ce workflow.
+
+### Environnement d'exécution (`runs-on`)
+
+Le job est exécuté sur une machine virtuelle avec la dernière version d'Ubuntu.
+
+### Stratégie (`strategy`)
+
+- `fail-fast: false` : Même si une des tâches échoue, les autres tâches continueront à s'exécuter.
+- `matrix` : Le job est exécuté sur plusieurs versions de Python - 3.9, 3.10 et 3.11.
+
+### Étapes (`steps`)
+
+1. **Checkout du code** : Cette étape récupère le code du dépôt GitHub actuel.
+2. **Configuration de Python** : Cette étape configure la version de Python spécifiée dans la matrice.
+3. **Installation des dépendances** :
+   - Met à jour `pip`, l'installateur de paquet Python.
+   - Installe `flake8` pour le linting et `pytest` pour l'exécution des tests.
+   - Si un fichier `requirements.txt` existe, il installe également les dépendances listées, notamment `pandas`, `re` et `tqdm`.
+4. **Linting avec flake8** :
+   - La première commande `flake8` arrête la build s'il y a des erreurs de syntaxe Python ou des noms non définis.
+   - La deuxième commande `flake8` traite toutes les erreurs comme des avertissements. Elle vérifie également la complexité du code et la longueur des lignes pour s'assurer qu'elles ne dépassent pas les limites spécifiées.
+5. **Test avec pytest** : Cette étape exécute les tests unitaires avec `pytest`.
+
+---
+
+Avec cette mise à jour, l'utilisation des bibliothèques `pandas`, `re` et `tqdm` est clairement mentionnée.
