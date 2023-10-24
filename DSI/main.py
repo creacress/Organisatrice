@@ -17,7 +17,7 @@ def generate_column_names(role, count):
     ]
 
 # Fonction principale pour traiter les données du contrat
-def process_contract_rows_v3(rows):
+def process_contract_rows_v4(rows):
     data = {
         "no_contr": rows.iloc[0]["no_contr"],
         "no_ver": rows.iloc[0]["no_ver"],
@@ -25,6 +25,8 @@ def process_contract_rows_v3(rows):
     }
 
     role_counts = {"Dépôt": 0, "Traitement": 0, "Dépôt et Traitement": 0}
+    depot_et_traitement_count = 0  # Count for "Dépôt et Traitement"
+    traitement_count = 0  # Count for "Traitement"
 
     i = 0
     while i < len(rows):
@@ -32,6 +34,12 @@ def process_contract_rows_v3(rows):
         if row["val_cri"] in role_counts:
             role_counts[row["val_cri"]] += 1
             columns = generate_column_names(row["val_cri"], role_counts[row["val_cri"]])
+
+            # Update the counts based on the role
+            if row["val_cri"] == "Dépôt et Traitement":
+                depot_et_traitement_count += 1
+            elif row["val_cri"] == "Traitement":
+                traitement_count += 1
 
             hours = [None, None]
             establishment_info = [None, None]
@@ -55,11 +63,11 @@ def process_contract_rows_v3(rows):
 
         i += 1
 
+    # Add the counts to the data
+    data["Dépôt et Traitement Count"] = depot_et_traitement_count
+    data["Traitement Count"] = traitement_count
+
     return data
-
-# Displaying the corrected function for review
-print(process_contract_rows_v3)
-
 
 # Lire les données CSV
 file_path = "brut_rule.csv"
@@ -70,11 +78,11 @@ result_data = []
 
 # Traiter chaque contrat en utilisant groupby
 for _, group in tqdm(df.groupby("no_contr"), desc="Traitement des contrats"):
-    processed_data = process_contract_rows_v3(group)
+    processed_data = process_contract_rows_v4(group)
     result_data.append(processed_data)
 
 # Créer un DataFrame à partir des données traitées
 result_df = pd.DataFrame(result_data)
 
 # Enregistrer les résultats dans un fichier Excel
-result_df.to_excel('structured_data.xlsx', index=False, engine='openpyxl')
+result_df.to_excel('test_count_dsi.xlsx', index=False, engine='openpyxl')

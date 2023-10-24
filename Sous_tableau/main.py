@@ -6,9 +6,9 @@ def read_excel_with_notification(path):
     print("Excel file loaded successfully!")
     return df
 
-def main():
+def modified_main():
     # Specify the path directly
-    file_path = "DSI_clean.xlsx"
+    file_path = "test_count_dsi.xlsx"
     df = read_excel_with_notification(file_path)
     
     # Define columns for each category
@@ -21,10 +21,10 @@ def main():
     
     # Extracting sub-tables for "Dépôt", "Traitement", and "Dépôt et Traitement"
     subtables = {
-        "main": df[other_cols + ["no_ver"]],
-        "depot": df[["no_contr", "no_ver"] + all_cols["depot"]],
-        "traitement": df[["no_contr", "no_ver"] + all_cols["traitement"]],
-        "depot_et_traitement": df[["no_contr", "no_ver"] + all_cols["depot_traitement"]]
+        "main": df[other_cols + ["no_ver", "Dépôt et Traitement Count", "Traitement Count"]],
+        "depot": df[["no_contr", "no_ver", "Dépôt et Traitement Count"] + all_cols["depot"]],
+        "traitement": df[["no_contr", "no_ver", "Traitement Count"] + all_cols["traitement"]],
+        "depot_et_traitement": df[["no_contr", "no_ver", "Dépôt et Traitement Count"] + all_cols["depot_traitement"]]
     }
     
     # Save each table to separate Excel files
@@ -37,4 +37,4 @@ def main():
     del df
 
 if __name__ == "__main__":
-    main()
+    modified_main()
