@@ -1,38 +1,28 @@
 import pandas as pd
 
-# 1. Charger les fichiers Excel.
-depot_table = pd.read_excel("Dépôt.xlsx")
-liste_etablissements = pd.read_excel("Liste_Etablissements.xlsx", usecols=["CodeREGATE"])
+# Étape 1: Charger les fichiers
+df_etablissement = pd.read_excel("Liste_Etablissements.xlsx")
+df_dsi = pd.read_excel("count_dsi_trier.xlsx")
 
-# 2. Convertir directement la série en un ensemble.
-code_regate_set = set(liste_etablissements["CodeREGATE"].astype(str))
+# Création d'un dictionnaire pour faciliter la recherche
+dict_etablissement = df_etablissement.set_index('Code Regate').to_dict(orient='index')
 
-# 3. Approche vectorisée pour vérifier chaque colonne "Code Regate (Dépôt X)".
-depot_columns = [col for col in depot_table.columns if "Code Regate" in col]
-result_columns = []
+# Étape 3 & 4: Comparer et ajouter les résultats
+for col in df_dsi.columns:
+    if "Code Regate" in col:
+        result_col_name = f"Resultat_{col}"  # Concaténation du nom de la colonne actuelle
+        ouvert_col_name = f"Ouvert_{col}"
 
-for col in depot_columns:
-    if not depot_table[col].isna().all():
-        result_col_name = f"Résultat {col.split(' ')[-1]}"
-        result_columns.append(result_col_name)
-        
-        mask_correspond = (~depot_table[col].isna()) & (depot_table[col].astype(str).isin(code_regate_set))
-        mask_no_correspond = (~depot_table[col].isna()) & (~depot_table[col].astype(str).isin(code_regate_set))
-        
-        depot_table.loc[mask_correspond, result_col_name] = "Correspond"
-        depot_table.loc[mask_no_correspond, result_col_name] = "Ne correspond pas"
-        depot_table[result_col_name] = depot_table[result_col_name].where(~depot_table[col].isna(), other=None)
+        def apply_logic(code):
+            if pd.isna(code):
+                return "", ""
+            if code in dict_etablissement:
+                site_traitement = dict_etablissement[code]["Site traitement Oui/Non"]
+                ouvert_status = dict_etablissement[code]["Ouvert Oui/Non"]
+                return "Non Traitement" if site_traitement == "Non" else "Correspondance", "Ouvert" if ouvert_status == "Oui" else "Fermé"
+            return "Non correspondance", ""
 
-# Filtrer les colonnes à sauvegarder
-cols_to_save = ['no_contr'] + depot_columns + [col.replace("Code Regate", "Etablissement") for col in depot_columns] + result_columns
-filtered_depot_table = depot_table[cols_to_save]
+        df_dsi[result_col_name], df_dsi[ouvert_col_name] = zip(*df_dsi[col].map(apply_logic))
 
-# Division du dataframe en fonction des résultats
-correspond_rows = filtered_depot_table[result_columns].eq("Correspond").any(axis=1)
-correspond_df = filtered_depot_table[correspond_rows]
-no_correspond_df = filtered_depot_table[~correspond_rows]
-
-# Sauvegarde des dataframes dans différentes feuilles du même fichier Excel
-with pd.ExcelWriter("chemin_vers_votre_fichier_de_resultats_optimized.xlsx") as writer:
-    correspond_df.to_excel(writer, sheet_name="Correspond", index=False)
-    no_correspond_df.to_excel(writer, sheet_name="Ne correspond pas", index=False)
+# Étape 6: Sauvegarder les modifications dans le même fichier
+df_dsi.to_excel("count_dsi_trier_V2.xlsx", index=False)
